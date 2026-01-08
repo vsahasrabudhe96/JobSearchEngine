@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { JobCard } from '@/components/jobs/job-card'
 import { Card, Button, Spinner, EmptyState } from '@/components/ui'
@@ -12,7 +12,7 @@ interface SearchItem { id: string; name: string }
 interface Job { id: string; title: string; company: string; location: string | null; snippet: string | null; remote: boolean; jobType: string | null; salaryMin: number | null; salaryMax: number | null; salaryCurrency: string | null; applyUrl: string; postedAt: string; visaSponsorship: string }
 interface Recommendation { job: Job; score: number; breakdown: MatchBreakdown }
 
-export default function RecommendationsPage() {
+function RecommendationsContent() {
   const searchParams = useSearchParams()
   const initialResumeId = searchParams.get('resumeId')
 
@@ -32,10 +32,11 @@ export default function RecommendationsPage() {
       const [resumesData, searchesData] = await Promise.all([resumesRes.json(), searchesRes.json()])
       setResumes(resumesData.resumes)
       setSearches(searchesData.searches)
-      if (!selectedResumeId && resumesData.resumes.length > 0) setSelectedResumeId(resumesData.resumes[0].id)
+      if (!initialResumeId && resumesData.resumes.length > 0) setSelectedResumeId(resumesData.resumes[0].id)
       setLoadingData(false)
     }
     fetchData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const fetchRecommendations = async () => {
@@ -50,7 +51,21 @@ export default function RecommendationsPage() {
     setLoading(false)
   }
 
-  useEffect(() => { if (selectedResumeId) fetchRecommendations() }, [selectedResumeId, selectedSearchId])
+  useEffect(() => { 
+    if (selectedResumeId) {
+      const doFetch = async () => {
+        setLoading(true)
+        let url = `/api/recommendations?resumeId=${selectedResumeId}&limit=20`
+        if (selectedSearchId) url += `&searchId=${selectedSearchId}`
+        const res = await fetch(url)
+        const data = await res.json()
+        setRecommendations(data.recommendations)
+        setTotalJobs(data.totalJobs)
+        setLoading(false)
+      }
+      doFetch()
+    }
+  }, [selectedResumeId, selectedSearchId])
 
   if (loadingData) return <div className="flex items-center justify-center py-20"><Spinner size="lg" /></div>
 
@@ -99,5 +114,13 @@ export default function RecommendationsPage() {
 
       {!loading && recommendations.length > 0 && <div className="space-y-4">{recommendations.map((rec, i) => <div key={rec.job.id} className="animate-fade-in" style={{ animationDelay: `${i * 50}ms` }}><JobCard job={rec.job} score={rec.score} breakdown={rec.breakdown} showMatchDetails={true} /></div>)}</div>}
     </div>
+  )
+}
+
+export default function RecommendationsPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center py-20"><Spinner size="lg" /></div>}>
+      <RecommendationsContent />
+    </Suspense>
   )
 }

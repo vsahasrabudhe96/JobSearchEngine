@@ -59,7 +59,7 @@ export function parseResumeText(text: string): ResumeParseResult {
     skills, experience, totalYearsExperience, education, keywords, jobTitles, openToRemote,
   }
 
-  const hasMinimalData = profile.name || profile.email || skills.length > 0 || experience.length > 0
+  const hasMinimalData = !!(profile.name || profile.email || skills.length > 0 || experience.length > 0)
   if (!hasMinimalData) warnings.push('Could not extract structured data from resume')
 
   return { success: hasMinimalData, profile, rawText: text, warnings: warnings.length > 0 ? warnings : undefined }

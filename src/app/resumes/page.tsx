@@ -57,7 +57,7 @@ export default function ResumesPage() {
         <div className="flex flex-col items-center justify-center py-8 text-center">
           <div className="w-16 h-16 rounded-2xl bg-surface-200 flex items-center justify-center mb-4"><Upload className="w-8 h-8 text-surface-500" /></div>
           <h3 className="text-lg font-semibold mb-2">Upload your resume</h3>
-          <p className="text-surface-500 max-w-md mb-4">We'll parse your resume to extract skills, experience, and keywords for matching.</p>
+          <p className="text-surface-500 max-w-md mb-4">We&apos;ll parse your resume to extract skills, experience, and keywords for matching.</p>
           <div className="flex items-center gap-4 text-sm text-surface-400"><span>PDF and DOCX</span><span>•</span><span>Max 10MB</span></div>
         </div>
       </Card>
