@@ -1,0 +1,168 @@
+// Prisma schema for Job Finder MVP
+// SQLite for local dev, PostgreSQL for production
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Saved job searches
+model Search {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Search criteria
+  name        String              // User-friendly name for the search
+  keywords    String              // Search keywords (comma-separated or main query)
+  location    String?             // Location filter
+  remote      Boolean @default(false)  // Remote jobs only
+  
+  // Enabled providers for this search (JSON array of provider IDs)
+  providers   String  @default("[]")
+  
+  // Related jobs found by this search
+  jobs        SearchJob[]
+  
+  // Active status
+  isActive    Boolean @default(true)
+  
+  @@index([isActive])
+}
+
+// Job listings
+model Job {
+  id              String   @id @default(cuid())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Core job info
+  externalId      String   // ID from the source provider
+  source          String   // Provider that found this job (e.g., "indeed", "linkedin")
+  title           String
+  company         String
+  location        String?
+  description     String?  // Full job description if available
+  snippet         String?  // Short preview/snippet
+  
+  // Work arrangement
+  remote          Boolean  @default(false)
+  jobType         String?  // full-time, part-time, contract, etc.
+  
+  // Salary info (if available)
+  salaryMin       Float?
+  salaryMax       Float?
+  salaryCurrency  String?
+  
+  // Application
+  applyUrl        String
+  
+  // Posting date from source (for 7-day filter)
+  postedAt        DateTime
+  
+  // Visa sponsorship status
+  visaSponsorship String   @default("unknown")  // "yes" | "no" | "unknown"
+  
+  // Deduplication hash (based on title + company + location)
+  dedupHash       String   @unique
+  
+  // Related searches
+  searches        SearchJob[]
+  
+  // Recommendations cache
+  recommendations JobRecommendation[]
+  
+  @@index([source])
+  @@index([postedAt])
+  @@index([visaSponsorship])
+  @@index([dedupHash])
+}
+
+// Many-to-many relation between searches and jobs
+model SearchJob {
+  id        String   @id @default(cuid())
+  searchId  String
+  jobId     String
+  foundAt   DateTime @default(now())
+  
+  search    Search   @relation(fields: [searchId], references: [id], onDelete: Cascade)
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  
+  @@unique([searchId, jobId])
+  @@index([searchId])
+  @@index([jobId])
+}
+
+// Fetch logs for tracking provider calls
+model FetchLog {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  
+  searchId    String?  // Which search triggered this fetch (null if manual/all)
+  provider    String   // Which provider was called
+  
+  // Results
+  success     Boolean
+  jobsFound   Int      @default(0)
+  jobsNew     Int      @default(0)
+  error       String?  // Error message if failed
+  durationMs  Int      // How long the fetch took
+  
+  @@index([createdAt])
+  @@index([provider])
+  @@index([searchId])
+}
+
+// Resume uploads and parsed profiles
+model Resume {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // File info
+  filename    String
+  fileType    String   // "pdf" | "docx"
+  fileSize    Int      // Size in bytes
+  
+  // Parsing results
+  parseStatus String   @default("pending")  // "pending" | "success" | "partial" | "failed"
+  parseError  String?  // Error message if parsing failed
+  rawText     String?  // Raw extracted text (fallback if structured parse fails)
+  
+  // Structured profile data (JSON)
+  // Contains: name, email, phone, location, skills[], experience[], education[], keywords[]
+  profileJson String   @default("{}")
+  
+  // Recommendations cache
+  recommendations JobRecommendation[]
+  
+  @@index([parseStatus])
+}
+
+// Job recommendations cache (optional - for performance)
+model JobRecommendation {
+  id            String   @id @default(cuid())
+  createdAt     DateTime @default(now())
+  
+  resumeId      String
+  jobId         String
+  
+  // Match score (0-100)
+  score         Int
+  
+  // Detailed breakdown (JSON)
+  // Contains: matchedSkills[], missingSkills[], matchedKeywords[], titleScore, etc.
+  breakdownJson String   @default("{}")
+  
+  resume        Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  job           Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  
+  @@unique([resumeId, jobId])
+  @@index([resumeId, score])
+  @@index([jobId])
+}
+
