@@ -11,6 +11,8 @@ export async function GET(request: NextRequest) {
     const { jobs, total } = await getRecentJobs({ searchId, limit: Math.min(limit, 100), offset })
     return NextResponse.json({ jobs, total, limit, offset, hasMore: offset + jobs.length < total })
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch jobs' }, { status: 500 })
+    console.error('Jobs API error:', error)
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    return NextResponse.json({ error: 'Failed to fetch jobs', details: message }, { status: 500 })
   }
 }
