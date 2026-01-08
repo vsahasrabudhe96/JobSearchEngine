@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { fetchAllActiveSearches, fetchFromProvider } from '@/lib/job-service'
 import { jobSourceRegistry } from '@/lib/sources'
 
+export const dynamic = 'force-dynamic'
+
 function verifyApiKey(request: NextRequest): boolean {
   const apiKey = process.env.ADMIN_API_KEY
   if (!apiKey) return process.env.NODE_ENV !== 'production'

@@ -5,6 +5,8 @@ import { getTopRecommendations } from '@/lib/matching'
 import type { ResumeProfile } from '@/lib/resume'
 import type { ProfileForMatching, JobForMatching } from '@/lib/matching'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)

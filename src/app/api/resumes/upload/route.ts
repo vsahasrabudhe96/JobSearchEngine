@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { parseResume, getFileTypeFromExtension } from '@/lib/resume'
 
+export const dynamic = 'force-dynamic'
+
 const MAX_FILE_SIZE = parseInt(process.env.MAX_UPLOAD_MB || '10', 10) * 1024 * 1024
 
 export async function POST(request: NextRequest) {

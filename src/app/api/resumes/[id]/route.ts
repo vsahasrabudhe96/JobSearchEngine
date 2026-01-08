@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import type { ResumeProfile } from '@/lib/resume'
 
+export const dynamic = 'force-dynamic'
+
 interface RouteContext { params: Promise<{ id: string }> }
 
 export async function GET(_request: NextRequest, context: RouteContext) {
