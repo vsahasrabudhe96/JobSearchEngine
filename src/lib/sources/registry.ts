@@ -1,11 +1,14 @@
 import type { IJobSource } from './types'
-import { MockJobProvider } from './providers'
+import { MockJobProvider, RemoteOKProvider, ArbeitnowProvider } from './providers'
 
 class JobSourceRegistry {
   private sources: Map<string, IJobSource> = new Map()
 
   constructor() {
+    // Register all available providers
     this.register(new MockJobProvider())
+    this.register(new RemoteOKProvider())
+    this.register(new ArbeitnowProvider())
   }
 
   register(source: IJobSource): void {
